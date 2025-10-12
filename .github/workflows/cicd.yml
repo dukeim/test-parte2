@@ -1,6 +1,8 @@
 name: CI/CD Pipeline - Employee Service
 
 on:
+  workflow_dispatch:
+  
   push:
     branches:
       - develop
