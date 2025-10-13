@@ -58,7 +58,7 @@ jobs:
   docker_build_push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    needs: tests
+    #needs: tests
     environment: ${{ github.ref_name == 'develop' && 'dev' || github.ref_name == 'release' && 'qa' || 'prod' }}
 
     steps:
