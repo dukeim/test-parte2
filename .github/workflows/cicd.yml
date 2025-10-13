@@ -103,9 +103,11 @@ jobs:
           IMAGE_URI=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}:$VERSION
           echo "🏗️ Building $IMAGE_URI"
           docker build -t $IMAGE_URI .
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
       - name: Push Docker image to ECR
         run: |
+          echo "Pushing $IMAGE_URI"
           docker push $IMAGE_URI
 
   deploy:
