@@ -105,6 +105,19 @@ jobs:
           docker build -t $IMAGE_URI .
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
+      - name: Ensuring ECR repository exists
+        run: |
+          echo "🔍 Checking if ECR repo ${IMAGE_NAME} exists..."
+          if ! aws ecr describe-repositories --repository-names "${IMAGE_NAME}" > /dev/null 2>&1; then
+            echo "🪄 Repository ${IMAGE_NAME} not found — creating it..."
+            aws ecr create-repository --repository-name "${IMAGE_NAME}" \
+              --image-scanning-configuration scanOnPush=true \
+              --region "${AWS_REGION}"
+            echo "✅ Repository ${IMAGE_NAME} created."
+          else
+            echo "✅ Repository ${IMAGE_NAME} already exists."
+          fi
+          
       - name: Push Docker image to ECR
         run: |
           echo "Pushing $IMAGE_URI"
