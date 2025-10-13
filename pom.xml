@@ -59,12 +59,7 @@
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>ssm</artifactId>
       <version>2.25.60</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
+      
     </dependency>
 
     <!-- Tests -->
@@ -78,6 +73,7 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>mysql</artifactId>
@@ -113,38 +109,6 @@
         <version>3.2.5</version>
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
-          <skip>${skipUnitTests}</skip>
-          <includes>
-            <include>**/*Test.java</include>
-          </includes>
-          <excludes>
-            <exclude>**/*IntegrationTest.java</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.2.5</version>
-        <executions>
-            <execution>
-              <id>integration-tests</id>
-              <phase>integration-test</phase>
-              <goals>
-                <goal>integration-test</goal>
-                <goal>verify</goal>
-              </goals>
-            </execution>
-        </executions>
-        <configuration>
-          <includes>
-            <include>**/*IntegrationTest.java</include>
-          </includes>
-          <useModulePath>false</useModulePath>
-          <classpathDependencyScope>test</classpathDependencyScope>
-          <useSystemClassLoader>false</useSystemClassLoader>
-          <forkCount>1</forkCount>
-          <reuseForks>false</reuseForks>
         </configuration>
       </plugin>
     </plugins>
