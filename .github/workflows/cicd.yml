@@ -59,6 +59,8 @@ jobs:
   docker_build_push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    outputs:
+      image_uri: ${{ steps.build_image.outputs.image_uri }}
     #needs: tests
     environment: ${{ github.ref_name == 'develop' && 'dev' || github.ref_name == 'release' && 'qa' || 'prod' }}
     steps:
@@ -99,6 +101,7 @@ jobs:
           fi
 
       - name: Build Docker image
+        id: build_image
         run: |
           IMAGE_URI=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}:$VERSION
           echo "🏗️ Building $IMAGE_URI"
