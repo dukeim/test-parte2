@@ -61,7 +61,6 @@ jobs:
     runs-on: ubuntu-latest
     #needs: tests
     environment: ${{ github.ref_name == 'develop' && 'dev' || github.ref_name == 'release' && 'qa' || 'prod' }}
-    if: false
     steps:
       - uses: actions/checkout@v4
 
