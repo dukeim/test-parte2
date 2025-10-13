@@ -104,7 +104,7 @@ jobs:
           echo "🏗️ Building $IMAGE_URI"
           docker build -t $IMAGE_URI .
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
       - name: Ensuring ECR repository exists
         run: |
           echo "🔍 Checking if ECR repo ${IMAGE_NAME} exists..."
@@ -152,8 +152,9 @@ jobs:
           
           TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition $TASK_DEF_NAME)
           echo "Current Task Definition JSON: $TASK_DEF_JSON"
+          IMAGE_URI=${{ needs.docker_build_push.outputs.image_uri }}
           echo "Image URI: $IMAGE_URI"
-          
+
           NEW_TASK_DEF=$(echo "$TASK_DEF_JSON" | \
             jq --arg IMAGE "$IMAGE_URI" \
                '.taskDefinition | 
