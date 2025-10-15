@@ -1,4 +1,4 @@
-# POC Employee Service (Java 21, Spring Boot 3) — MySQL + SSM (per env)
+# POC Employee Service (Java 21, Spring Boot 3) — MySQL + SSM (por ambiente)
 
 Microservicio de ejemplo listo para ECS (EC2) y RDS **MySQL**. Obtiene la configuración de BD desde
 **AWS SSM Parameter Store** según el ambiente (`APP_ENV=dev|qa|prod`).
@@ -28,7 +28,7 @@ Por defecto, `APP_SSM_PREFIX=/myapp` y `APP_ENV=dev` (puedes cambiarlos via env 
 export APP_DB_FROM_SSM=false
 export SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/appdb
 export SPRING_DATASOURCE_USERNAME=root
-export SPRING_DATASOURCE_PASSWORD=secret
+export SPRING_DATASOURCE_PASSWORD=sasa
 ./mvnw spring-boot:run
 ```
 
@@ -43,16 +43,10 @@ docker run --rm -p 8080:8080       -e APP_ENV=dev -e APP_SSM_PREFIX=/myapp -e AP
 ./mvnw clean package -DskipTests
 ```
 
-## Tests Unitarios
+## Tests Unitarios y Tests de Integracion
 ```bash
 ./mvnw test
 ```
-
-## Tests de Integracion
-```bash
-./mvnw verify -DskipUnitTests=true
-```
-
 
 ## GitHub Actions
 Workflow en `.github/workflows/ci.yml` que construye y ejecuta tests (unit + integración).

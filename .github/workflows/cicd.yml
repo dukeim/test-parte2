@@ -40,8 +40,8 @@ jobs:
       - name: Build with Maven
         run: chmod +x mvnw && ./mvnw -B clean package -DskipTests
 
-  unit_tests:
-    name: Run Unit Tests
+  tests:
+    name: Run Unit Tests e Integration Tests
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -54,26 +54,13 @@ jobs:
       - name: Run Unit Tests
         run: chmod +x mvnw && ./mvnw -B test
 
-  integration_tests:
-    name: Run Integration Tests
-    runs-on: ubuntu-latest
-    needs: unit_tests
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-      - name: Run Integration Tests (with Testcontainers)
-        run: chmod +x mvnw && ./mvnw -B verify -DskipUnitTests=true
-
   docker_build_push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    needs: integration_tests
+    outputs:
+      image_uri: ${{ steps.build_image.outputs.image_uri }}
+    needs: tests
     environment: ${{ github.ref_name == 'develop' && 'dev' || github.ref_name == 'release' && 'qa' || 'prod' }}
-
     steps:
       - uses: actions/checkout@v4
 
@@ -87,6 +74,7 @@ jobs:
       - name: Extract version from pom.xml
         id: version
         run: |
+          chmod +x mvnw
           VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "📦 Artifact version: $VERSION"
@@ -111,20 +99,36 @@ jobs:
           fi
 
       - name: Build Docker image
+        id: build_image
         run: |
           IMAGE_URI=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}:$VERSION
           echo "🏗️ Building $IMAGE_URI"
           docker build -t $IMAGE_URI .
-
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+      - name: Ensuring ECR repository exists
+        run: |
+          echo "🔍 Checking if ECR repo ${IMAGE_NAME} exists..."
+          if ! aws ecr describe-repositories --repository-names "${IMAGE_NAME}" > /dev/null 2>&1; then
+            echo "🪄 Repository ${IMAGE_NAME} not found — creating it..."
+            aws ecr create-repository --repository-name "${IMAGE_NAME}" \
+              --image-scanning-configuration scanOnPush=true \
+              --region "${AWS_REGION}"
+            echo "✅ Repository ${IMAGE_NAME} created."
+          else
+            echo "✅ Repository ${IMAGE_NAME} already exists."
+          fi
+          
       - name: Push Docker image to ECR
         run: |
+          echo "Pushing $IMAGE_URI"
           docker push $IMAGE_URI
 
   deploy:
     name: Deploy to ECS
     runs-on: ubuntu-latest
     needs: docker_build_push
-    if: ${{ false || github.event_name == 'push'}}
+    if: ${{ github.event_name == 'push' }} # Only deploy on push events
     environment: ${{ github.ref_name == 'develop' && 'dev' || github.ref_name == 'release' && 'qa' || 'prod' }}
 
     steps:
@@ -137,8 +141,38 @@ jobs:
 
       - name: Update ECS Service
         run: |
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster ${{ vars.ECS_CLUSTER_NAME }} \
+            --services ${{ vars.ECS_SERVICE_NAME }} \
+            --query "services[0].taskDefinition" \
+            --output text)
+
+          # Quitar todo después de los dos puntos finales (:revision)
+          TASK_DEF_NAME=${TASK_DEF_ARN%:*}
+          echo "Task Definition Name: $TASK_DEF_NAME"
+          
+          TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition $TASK_DEF_NAME)
+          echo "Current Task Definition JSON: $TASK_DEF_JSON"
+          IMAGE_URI=${{ needs.docker_build_push.outputs.image_uri }}
+          echo "Image URI: $IMAGE_URI"
+
+          NEW_TASK_DEF=$(echo "$TASK_DEF_JSON" | \
+            jq --arg IMAGE "$IMAGE_URI" \
+               '.taskDefinition | 
+                .containerDefinitions[0].image = $IMAGE |
+                del(.status, .revision, .taskDefinitionArn, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+          echo "New Task Definition JSON: $NEW_TASK_DEF"
+          echo "$NEW_TASK_DEF" > new-task-def.json
+
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "🆔 New task definition ARN: $NEW_TASK_DEF_ARN"
+
           echo "🚀 Triggering ECS deployment..."
           aws ecs update-service \
-            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
-            --service ${{ secrets.ECS_SERVICE_NAME }} \
-            --force-new-deployment
+            --cluster ${{ vars.ECS_CLUSTER_NAME }} \
+            --service ${{ vars.ECS_SERVICE_NAME }} \
+            --task-definition $NEW_TASK_DEF_ARN
