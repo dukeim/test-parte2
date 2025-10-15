@@ -24,3 +24,12 @@ spring:
 app:
   db:
     resolveFromSsm: ${APP_DB_FROM_SSM:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
