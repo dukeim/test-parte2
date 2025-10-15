@@ -1,4 +1,4 @@
-# POC Employee Service (Java 21, Spring Boot 3) — MySQL + SSM (per env)
+# POC Employee Service (Java 21, Spring Boot 3) — MySQL + SSM (por ambiente)
 
 Microservicio de ejemplo listo para ECS (EC2) y RDS **MySQL**. Obtiene la configuración de BD desde
 **AWS SSM Parameter Store** según el ambiente (`APP_ENV=dev|qa|prod`).
