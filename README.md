@@ -43,16 +43,10 @@ docker run --rm -p 8080:8080       -e APP_ENV=dev -e APP_SSM_PREFIX=/myapp -e AP
 ./mvnw clean package -DskipTests
 ```
 
-## Tests Unitarios
+## Tests Unitarios y Tests de Integracion
 ```bash
 ./mvnw test
 ```
-
-## Tests de Integracion
-```bash
-./mvnw verify -DskipUnitTests=true
-```
-
 
 ## GitHub Actions
 Workflow en `.github/workflows/ci.yml` que construye y ejecuta tests (unit + integración).
