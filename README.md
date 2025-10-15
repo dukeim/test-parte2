@@ -27,8 +27,8 @@ Por defecto, `APP_SSM_PREFIX=/myapp` y `APP_ENV=dev` (puedes cambiarlos via env 
 ```bash
 export APP_DB_FROM_SSM=false
 export SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/appdb
-export SPRING_DATASOURCE_USERNAME=root
-export SPRING_DATASOURCE_PASSWORD=sasa
+export SPRING_DATASOURCE_USERNAME=<usuario>
+export SPRING_DATASOURCE_PASSWORD=<password>
 ./mvnw spring-boot:run
 ```
 
